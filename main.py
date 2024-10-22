@@ -82,9 +82,18 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=True)
 
+    model_name = 'Unet-Mobilenet_v2_161024'
+
     # define model and hyperparameters
-    model = smp.Unet('mobilenet_v2', encoder_weights='imagenet', classes=23, activation=None, encoder_depth=5,
-                     decoder_channels=[256, 128, 64, 32, 16])
+    if 'Mobilenet' in model_name:
+        model = smp.Unet('mobilenet_v2', encoder_weights='imagenet', classes=23, activation=None,
+                         encoder_depth=5, decoder_channels=[256, 128, 64, 32, 16])
+    elif 'Resnet34' in model_name:
+        model = smp.Unet('resnet34', encoder_weights='imagenet', classes=23, activation=None,
+                         encoder_depth=5)
+    elif 'Resnext50' in model_name:
+        model = smp.Unet('resnext50_32x4d', encoder_weights='imagenet', classes=23, activation=None,
+                         encoder_depth=5)
 
     max_lr = 1e-3
     epoch = 50  #1  #6 #15
@@ -99,28 +108,4 @@ if __name__ == '__main__':
     make_folder(model_save_folder)
 
     history = fit(epoch, model, train_loader, val_loader, criterion, optimizer, sched, device,
-                  model_name='Unet-Mobilenet_v2_161024', model_save_folder=model_save_folder)
-
-    # inference
-    # t_test = A.Resize(768, 1152, interpolation=cv2.INTER_NEAREST)
-    # test_set = DroneTestDataset(IMAGE_PATH, MASK_PATH, X_test, transform=t_test)
-    #
-    # image, mask = test_set[3]
-    # pred_mask, score = predict_image_mask_miou(model, image, mask, device)
-    # mob_miou = miou_score(model, test_set, device)
-    # mob_acc = pixel_acc_score(model, test_set, device)
-    #
-    # # plot single image
-    # fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 10))
-    # ax1.imshow(image)
-    # ax1.set_title('Picture')
-    #
-    # ax2.imshow(mask)
-    # ax2.set_title('Ground truth')
-    # ax2.set_axis_off()
-    #
-    # ax3.imshow(pred_mask)
-    # ax3.set_title('UNet-MobileNet | mIoU {:.3f}'.format(score))
-    # ax3.set_axis_off()
-
-    pass
+                  model_name=model_name, model_save_folder=model_save_folder)

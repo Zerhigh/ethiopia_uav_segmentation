@@ -39,9 +39,13 @@ if __name__ == '__main__':
     IMAGE_PATH = os.path.join(DATA_BASE, r'original_images')
     MASK_PATH = os.path.join(DATA_BASE, r'label_images_semantic')
 
-    model_folder = '181024'
+    models_folder = os.listdir(MODEL_BASE)
+    print(f'available models: {models_folder}')
+    model_folder = 'resnext50'
     mode = 'whole_model' #'state_dict'  # 'whole_model'
-    model_name = f'Unet-Resnet34_181024_mIoU454_{mode}.pt'
+    # model_name = f'Unet-Mobilenet_v2_161024_mIoU385_{mode}.pt'
+    # model_name = f'Unet-Resnet34_181024_mIoU454_{mode}.pt'
+    model_name = f'Unet-resnext50_32x4d_211024_mIOU572_{mode}.pt'
     MODEL_DICT_PATH = os.path.join(MODEL_BASE, model_folder, model_name)
 
     # create saving directory
@@ -67,8 +71,15 @@ if __name__ == '__main__':
 
     # load model
     print('Loading model')
-    model = smp.Unet('mobilenet_v2', encoder_weights='imagenet', classes=23, activation=None, encoder_depth=5,
-                     decoder_channels=[256, 128, 64, 32, 16])
+    if 'Mobilenet' in model_name:
+        model = smp.Unet('mobilenet_v2', encoder_weights='imagenet', classes=23, activation=None,
+                         encoder_depth=5, decoder_channels=[256, 128, 64, 32, 16])
+    elif 'Resnet34' in model_name:
+        model = smp.Unet('resnet34', encoder_weights='imagenet', classes=23, activation=None,
+                         encoder_depth=5)
+    elif 'Resnext50' in model_name:
+        model = smp.Unet('resnext50_32x4d', encoder_weights='imagenet', classes=23, activation=None,
+                         encoder_depth=5)
 
     print('Loading weights')
     # load model state_dict
