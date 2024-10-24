@@ -22,3 +22,9 @@ def open_class_csv(filepath):
     data = pd.read_csv(filepath)
     data.index = data['name']
     return data
+
+
+def open_class_csv(filepath):
+    data = pd.read_csv(filepath)
+    data.index = data['name']
+    return data
