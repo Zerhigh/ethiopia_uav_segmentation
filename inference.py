@@ -2,8 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import seaborn as sns
 
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
@@ -24,7 +26,7 @@ import segmentation_models_pytorch as smp
 
 from training import fit, predict_image_mask_miou, miou_score, pixel_acc_score
 from drone_datasets import DroneDataset, DroneTestDataset
-from utils import create_df, make_folder
+from utils import create_df, make_folder, open_class_csv
 import plotting
 
 if __name__ == '__main__':
@@ -53,6 +55,8 @@ if __name__ == '__main__':
     make_folder(output_folder)
     make_folder(os.path.join(output_folder, 'predictions'))
     make_folder(os.path.join(output_folder, 'predictions_plots'))
+
+    class_dict = open_class_csv(r'C:\Users\PC\Coding\ethiopia_uav_segmentation\data\uav_graz\class_dict_seg.csv')
 
     load_state_dict = False
     load_whole_model = not load_state_dict
@@ -94,13 +98,20 @@ if __name__ == '__main__':
     # create test dataset
     t_test = A.Resize(768, 1152, interpolation=cv2.INTER_NEAREST)
     test_set = DroneTestDataset(IMAGE_PATH, MASK_PATH, X_test, transform=t_test)
-    transform = T.ToPILImage()
+
+    all_gt, all_pred = [], []
 
     print('Doing inference...')
     for i, (image, mask) in tqdm(enumerate(test_set)):
         pred_mask, score = predict_image_mask_miou(model, image, mask, device)
         img_index = test_set.X[i]
 
+        # calculate confusion values
+        all_gt.append(mask.view(-1).cpu().numpy())
+        all_pred.append(pred_mask.view(-1).cpu().numpy())
+
+        if i>3:
+            break
 
         if save_predictions:
             pred_mask_img = np.array(pred_mask, dtype=np.uint8)
@@ -126,4 +137,11 @@ if __name__ == '__main__':
 
             plt.close(fig=fig)
 
+    gt_cm = np.concatenate(all_gt)
+    pred_cm = np.concatenate(all_pred)
+    cm = confusion_matrix(gt_cm, pred_cm)
+    cm_percentage = cm.astype('float') / cm.sum() * 100
 
+    figcm, axcm = plt.subplots(1, 1, figsize=(10, 10))
+    sns.heatmap(cm_percentage, annot=True, fmt='.2f', cbar=False, cmap='Blues', xticklabels=class_dict['name'], yticklabels=class_dict['name'])
+    plt.show()

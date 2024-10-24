@@ -16,3 +16,9 @@ def make_folder(dp):
     if not os.path.exists(dp):
         os.mkdir(dp)
     return
+
+
+def open_class_csv(filepath):
+    data = pd.read_csv(filepath)
+    data.index = data['name']
+    return data
