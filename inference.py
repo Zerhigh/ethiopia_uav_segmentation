@@ -26,7 +26,7 @@ import segmentation_models_pytorch as smp
 
 from training import fit, predict_image_mask_miou, miou_score, pixel_acc_score
 from drone_datasets import DroneDataset, DroneTestDataset
-from utils import create_df, make_folder, open_class_csv
+from utils import create_df, make_folder, open_class_csv, create_image_legend
 import plotting
 
 if __name__ == '__main__':
@@ -43,11 +43,16 @@ if __name__ == '__main__':
 
     models_folder = os.listdir(MODEL_BASE)
     print(f'available models: {models_folder}')
-    model_folder = 'resnext50'
+
     mode = 'whole_model' #'state_dict'  # 'whole_model'
-    # model_name = f'Unet-Mobilenet_v2_161024_mIoU385_{mode}.pt'
+
+    model_name = f'Unet-Mobilenet_v2_161024_mIoU385_{mode}.pt'
+    model_folder = 'mobilenet'
+
     # model_name = f'Unet-Resnet34_181024_mIoU454_{mode}.pt'
-    model_name = f'Unet-resnext50_32x4d_211024_mIOU572_{mode}.pt'
+
+    #model_name = f'Unet-resnext50_32x4d_211024_mIOU572_{mode}.pt'
+    #model_folder = 'resnext50'
     MODEL_DICT_PATH = os.path.join(MODEL_BASE, model_folder, model_name)
 
     # create saving directory
@@ -57,6 +62,9 @@ if __name__ == '__main__':
     make_folder(os.path.join(output_folder, 'predictions_plots'))
 
     class_dict = open_class_csv(r'C:\Users\PC\Coding\ethiopia_uav_segmentation\data\uav_graz\class_dict_seg.csv')
+    class_colors = {i: (row['r'], row['g'], row['b']) for i, row in class_dict.iterrows()}
+
+    create_image_legend(class_colors, class_dict)
 
     load_state_dict = False
     load_whole_model = not load_state_dict
@@ -67,6 +75,7 @@ if __name__ == '__main__':
 
     print('Creating a DataSet')
     n_classes = 23
+    image_hw = (704, 1056)
     df = create_df(image_path=IMAGE_PATH)
     print('Total Images: ', len(df))
 
@@ -101,22 +110,37 @@ if __name__ == '__main__':
 
     all_gt, all_pred = [], []
 
+    colored_image_np = np.zeros((768, 1152, 3), dtype=np.uint8)
+
     print('Doing inference...')
     for i, (image, mask) in tqdm(enumerate(test_set)):
         pred_mask, score = predict_image_mask_miou(model, image, mask, device)
         img_index = test_set.X[i]
 
+        # color prediction mask
+        pred_mask_np = pred_mask.numpy()
+
+        for class_value, rgb in class_colors.items():
+            colored_image_np[pred_mask_np == class_value] = rgb
+
+        colored_image = Image.fromarray(colored_image_np)
+
         # calculate confusion values
         all_gt.append(mask.view(-1).cpu().numpy())
         all_pred.append(pred_mask.view(-1).cpu().numpy())
 
-        if i>3:
-            break
+        color_ = True
+
+        # if i>3:
+        #     break
 
         if save_predictions:
-            pred_mask_img = np.array(pred_mask, dtype=np.uint8)
-            xx = Image.fromarray(pred_mask_img)
-            xx.save(os.path.join(output_folder, 'predictions', f'{img_index}.png'))
+            if color_:
+                colored_image.save(os.path.join(output_folder, 'predictions', f'{img_index}.png'))
+            else:
+                pred_mask_img = np.array(pred_mask, dtype=np.uint8)
+                xx = Image.fromarray(pred_mask_img)
+                xx.save(os.path.join(output_folder, 'predictions', f'{img_index}.png'))
 
         if plot_image:
             fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 10))
