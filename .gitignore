@@ -1,5 +1,5 @@
 venv
 .idea
-data
+data/*
 old_code
-output
+output/*
