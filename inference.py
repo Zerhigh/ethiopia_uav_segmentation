@@ -46,8 +46,9 @@ if __name__ == '__main__':
 
     mode = 'whole_model' #'state_dict'  # 'whole_model'
 
-    model_name = f'Unet-Mobilenet_v2_161024_mIoU385_{mode}.pt'
-    model_folder = 'mobilenet'
+    #model_name = f'Unet-Mobilenet_v2_161024_mIoU385_{mode}.pt'
+    model_name = f'Unet-resnext50_32x4d_211024_mIOU572_{mode}.pt'
+    model_folder = 'resnext50'
 
     # model_name = f'Unet-Resnet34_181024_mIoU454_{mode}.pt'
 
@@ -64,7 +65,7 @@ if __name__ == '__main__':
     class_dict = open_class_csv(r'C:\Users\PC\Coding\ethiopia_uav_segmentation\data\uav_graz\class_dict_seg.csv')
     class_colors = {i: (row['r'], row['g'], row['b']) for i, row in class_dict.iterrows()}
 
-    create_image_legend(class_colors, class_dict)
+    #create_image_legend(class_colors, class_dict)
 
     load_state_dict = False
     load_whole_model = not load_state_dict
@@ -107,6 +108,11 @@ if __name__ == '__main__':
     # create test dataset
     t_test = A.Resize(768, 1152, interpolation=cv2.INTER_NEAREST)
     test_set = DroneTestDataset(IMAGE_PATH, MASK_PATH, X_test, transform=t_test)
+    #prediction_set = DroneTestDataset(IMAGE_PATH, MASK_PATH, X_trainval, transform=t_test)
+    pred_image_nr = None #[236] # None
+    if pred_image_nr is not None:
+        test_set = DroneTestDataset(IMAGE_PATH, MASK_PATH, X_trainval, transform=t_test)
+
 
     all_gt, all_pred = [], []
 
@@ -114,6 +120,9 @@ if __name__ == '__main__':
 
     print('Doing inference...')
     for i, (image, mask) in tqdm(enumerate(test_set)):
+        if pred_image_nr is not None:
+            if i not in pred_image_nr:
+                continue
         pred_mask, score = predict_image_mask_miou(model, image, mask, device)
         img_index = test_set.X[i]
 
@@ -130,9 +139,6 @@ if __name__ == '__main__':
         all_pred.append(pred_mask.view(-1).cpu().numpy())
 
         color_ = True
-
-        # if i>3:
-        #     break
 
         if save_predictions:
             if color_:

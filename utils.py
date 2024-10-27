@@ -1,4 +1,6 @@
 import os
+import pickle
+
 import pandas as pd
 import numpy as np
 
@@ -55,3 +57,45 @@ def create_image_legend(class_to_rgb, class_labels):
     # Save and display the image
     img.show()
     img.save('colored_squares_with_legend.png')
+
+
+def extract_gdal_transformations(image_paths, agg_trafo_path):
+    transformations = {}
+
+    # save image extensions?
+    for img in os.listdir(image_paths):
+        src = gdal.Open(os.path.join(image_paths, img))
+        trafo = src.GetGeoTransform()
+        transformations[img] = trafo
+
+    with open(agg_trafo_path, 'wb') as ftrafo:
+        pickle.dump(transformations, ftrafo)
+
+    return
+
+
+def reapply_gdal_transformations(image_paths, agg_trafo_paths, ref_epsg=4326):
+
+    with open(agg_trafo_paths, 'rb') as ftrafo:
+        transformations = pickle.load(ftrafo)
+
+    # hadnle_img_extensions
+    for img in os.listdir(image_paths):
+        img_wo_ext = os.path.splitext(img)[0]
+
+        trafo = transformations[os.path.join(img_wo_ext, '.tif')]
+
+        srs = osr.SpatialReference()
+        srs.ImportFromEPSG(ref_epsg)
+
+        # update image georeference
+        ds = gdal.Open(os.path.join(image_paths, img_wo_ext, '.png'), gdal.GA_Update)
+        #ds = gdal.Open(img_path, gdal.GA_Update)
+        ds.SetGeoTransform(trafo)
+        ds.SetProjection(srs.ExportToWkt())
+        ds.FlushCache()
+
+        # save as tif?
+
+
+    return
