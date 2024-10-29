@@ -8,7 +8,7 @@ import cv2
 
 class DroneDataset(Dataset):
 
-    def __init__(self, img_path, mask_path, X, mean, std, transform=None, patch=False):
+    def __init__(self, img_path, mask_path, X, mean, std, transform=None, patch=False, img_post='.jpg', mask_post='.png'):
         self.img_path = img_path
         self.mask_path = mask_path
         self.X = X
@@ -16,14 +16,16 @@ class DroneDataset(Dataset):
         self.patches = patch
         self.mean = mean
         self.std = std
+        self.img_post = img_post
+        self.mask_post = mask_post
 
     def __len__(self):
         return len(self.X)
 
     def __getitem__(self, idx):
-        img = cv2.imread(self.img_path + '/' + self.X[idx] + '.jpg')
+        img = cv2.imread(self.img_path + '/' + self.X[idx] + self.img_post)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(self.mask_path + '/' + self.X[idx] + '.png', cv2.IMREAD_GRAYSCALE)
+        mask = cv2.imread(self.mask_path + '/' + self.X[idx] + self.mask_post, cv2.IMREAD_GRAYSCALE)
 
         if self.transform is not None:
             aug = self.transform(image=img, mask=mask)
@@ -56,19 +58,21 @@ class DroneDataset(Dataset):
 
 class DroneTestDataset(Dataset):
 
-    def __init__(self, img_path, mask_path, X, transform=None):
+    def __init__(self, img_path, mask_path, X, transform=None, img_post='.jpg', mask_post='.png'):
         self.img_path = img_path
         self.mask_path = mask_path
         self.X = X
         self.transform = transform
+        self.img_post = img_post
+        self.mask_post = mask_post
 
     def __len__(self):
         return len(self.X)
 
     def __getitem__(self, idx):
-        img = cv2.imread(self.img_path + '/' + self.X[idx] + '.jpg')
+        img = cv2.imread(self.img_path + '/' + self.X[idx] + self.img_post)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(self.mask_path + '/' + self.X[idx] + '.png', cv2.IMREAD_GRAYSCALE)
+        mask = cv2.imread(self.mask_path + '/' + self.X[idx] + self.mask_post, cv2.IMREAD_GRAYSCALE)
 
         if self.transform is not None:
             aug = self.transform(image=img, mask=mask)
@@ -81,3 +85,4 @@ class DroneTestDataset(Dataset):
         mask = torch.from_numpy(mask).long()
 
         return img, mask
+

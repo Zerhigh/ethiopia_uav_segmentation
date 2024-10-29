@@ -82,7 +82,7 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=True)
 
-    model_name = 'Unet-Mobilenet_v2_161024'
+    model_name = 'Unet-Mobilenet_v2_28102024'
 
     # define model and hyperparameters
     if 'Mobilenet' in model_name:
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     sched = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr, epochs=epoch,
                                                 steps_per_epoch=len(train_loader))
 
-    model_save_folder = 'models/171024'
+    model_save_folder = 'models/mobilenet_showcase'
     make_folder(model_save_folder)
 
     history = fit(epoch, model, train_loader, val_loader, criterion, optimizer, sched, device,

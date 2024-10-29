@@ -35,11 +35,18 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     DATA_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\data\uav_graz\dataset\semantic_drone_dataset'
-    OUTPUT_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\output\uav_graz'
-    MODEL_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\models'
+    #OUTPUT_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\output\uav_graz'
 
     IMAGE_PATH = os.path.join(DATA_BASE, r'original_images')
     MASK_PATH = os.path.join(DATA_BASE, r'label_images_semantic')
+
+    DATA_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\data\uav_addis_01'
+    OUTPUT_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\output\uav_addis_01'
+
+    IMAGE_PATH = DATA_BASE
+    MASK_PATH = DATA_BASE
+
+    MODEL_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\models'
 
     models_folder = os.listdir(MODEL_BASE)
     print(f'available models: {models_folder}')
@@ -81,7 +88,12 @@ if __name__ == '__main__':
     print('Total Images: ', len(df))
 
     # create test and train datasets: training 76.5?%), testing (13.5%), validation (10%)
-    X_trainval, X_test = train_test_split(df['id'].values, test_size=0.1, random_state=19)
+    test_size = 0.1
+    predict_all = True
+    if predict_all:
+        test_size = 0.9
+
+    X_trainval, X_test = train_test_split(df['id'].values, test_size=test_size, random_state=19)
 
     # load model
     print('Loading model')
@@ -107,7 +119,7 @@ if __name__ == '__main__':
 
     # create test dataset
     t_test = A.Resize(768, 1152, interpolation=cv2.INTER_NEAREST)
-    test_set = DroneTestDataset(IMAGE_PATH, MASK_PATH, X_test, transform=t_test)
+    test_set = DroneTestDataset(IMAGE_PATH, MASK_PATH, X_test, transform=t_test, mask_post='.jpg')
     #prediction_set = DroneTestDataset(IMAGE_PATH, MASK_PATH, X_trainval, transform=t_test)
     pred_image_nr = None #[236] # None
     if pred_image_nr is not None:
@@ -172,8 +184,18 @@ if __name__ == '__main__':
     cm = confusion_matrix(gt_cm, pred_cm)
     cm_percentage = cm.astype('float') / cm.sum() * 100
 
-    # classes: q
-    # tree, gras, other vegetation, dirt, gravel, rocks, water, paved area, pool, person, dog, car, bicycle, roof, wall, fence, fence-pole, window, door, obstacle
+    annot = np.empty_like(cm_percentage, dtype=object)
+    for i in range(cm_percentage.shape[0]):
+        for j in range(cm_percentage.shape[1]):
+            if cm_percentage[i, j] == 0:
+                annot[i, j] = '0'  # Display '0' for zero values
+            else:
+                annot[i, j] = f'{cm_percentage[i, j]:.1f}'  # Display two decimals for non-zero values
+
+    # classes: tree, gras, other vegetation, dirt, gravel, rocks, water, paved area, pool, person, dog, car, bicycle,
+    #          roof, wall, fence, fence-pole, window, door, obstacle
     figcm, axcm = plt.subplots(1, 1, figsize=(10, 10))
-    sns.heatmap(cm_percentage, annot=True, fmt='.2f', cbar=False, cmap='Blues', xticklabels=class_dict['name'], yticklabels=class_dict['name'])
-    plt.show()
+    sns.heatmap(cm_percentage, annot=annot, fmt='', cbar=True, cmap='Blues', xticklabels=class_dict['name'],
+                yticklabels=class_dict['name'])
+    plt.savefig('cm.png')
+    #plt.show()
