@@ -29,6 +29,10 @@ To train a model, execute the script ```main.py```. Please take care to change t
 
 To run inference on your trained model execute the ```inference.py``` script. It is necessary to change your filepaths accordingly as well.
 
+### Cloud solution
+
+The file ````ethiopia_uav.ipynb```` contains the whole functionalities of this repository in a ```.ipynb``` notebook. Upload this notebook into a Cloud IDE such as Google Collab. 
+
 ### Sources
 
 Data: [http://dronedataset.icg.tugraz.at](http://dronedataset.icg.tugraz.at)
