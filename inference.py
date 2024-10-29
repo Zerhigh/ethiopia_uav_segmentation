@@ -35,32 +35,33 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     DATA_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\data\uav_graz\dataset\semantic_drone_dataset'
-    #OUTPUT_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\output\uav_graz'
+    OUTPUT_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\output\uav_graz'
 
     IMAGE_PATH = os.path.join(DATA_BASE, r'original_images')
     MASK_PATH = os.path.join(DATA_BASE, r'label_images_semantic')
 
-    DATA_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\data\uav_addis_01'
-    OUTPUT_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\output\uav_addis_01'
-
-    IMAGE_PATH = DATA_BASE
-    MASK_PATH = DATA_BASE
+    # File location for collected drone image data
+    # DATA_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\data\uav_addis_01'
+    # OUTPUT_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\output\uav_addis_01'
+    #
+    # IMAGE_PATH = DATA_BASE
+    # MASK_PATH = DATA_BASE
+    #
 
     MODEL_BASE = r'C:\Users\PC\Coding\ethiopia_uav_segmentation\models'
 
     models_folder = os.listdir(MODEL_BASE)
     print(f'available models: {models_folder}')
 
-    mode = 'whole_model' #'state_dict'  # 'whole_model'
+    mode = 'whole_model'
 
-    #model_name = f'Unet-Mobilenet_v2_161024_mIoU385_{mode}.pt'
-    model_name = f'Unet-resnext50_32x4d_211024_mIOU572_{mode}.pt'
+    # changes these variables according to the models name and location you have trained
     model_folder = 'resnext50'
 
+    model_name = f'Unet-resnext50_32x4d_211024_mIOU572_{mode}.pt'
+    # model_name = f'Unet-Mobilenet_v2_161024_mIoU385_{mode}.pt'
     # model_name = f'Unet-Resnet34_181024_mIoU454_{mode}.pt'
 
-    #model_name = f'Unet-resnext50_32x4d_211024_mIOU572_{mode}.pt'
-    #model_folder = 'resnext50'
     MODEL_DICT_PATH = os.path.join(MODEL_BASE, model_folder, model_name)
 
     # create saving directory
@@ -72,7 +73,7 @@ if __name__ == '__main__':
     class_dict = open_class_csv(r'C:\Users\PC\Coding\ethiopia_uav_segmentation\data\uav_graz\class_dict_seg.csv')
     class_colors = {i: (row['r'], row['g'], row['b']) for i, row in class_dict.iterrows()}
 
-    #create_image_legend(class_colors, class_dict)
+    create_image_legend(class_colors, class_dict)
 
     load_state_dict = False
     load_whole_model = not load_state_dict
@@ -90,8 +91,6 @@ if __name__ == '__main__':
     # create test and train datasets: training 76.5?%), testing (13.5%), validation (10%)
     test_size = 0.1
     predict_all = True
-    if predict_all:
-        test_size = 0.9
 
     X_trainval, X_test = train_test_split(df['id'].values, test_size=test_size, random_state=19)
 
@@ -124,7 +123,6 @@ if __name__ == '__main__':
     pred_image_nr = None #[236] # None
     if pred_image_nr is not None:
         test_set = DroneTestDataset(IMAGE_PATH, MASK_PATH, X_trainval, transform=t_test)
-
 
     all_gt, all_pred = [], []
 
@@ -198,4 +196,3 @@ if __name__ == '__main__':
     sns.heatmap(cm_percentage, annot=annot, fmt='', cbar=True, cmap='Blues', xticklabels=class_dict['name'],
                 yticklabels=class_dict['name'])
     plt.savefig('cm.png')
-    #plt.show()
